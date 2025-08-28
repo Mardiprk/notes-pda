@@ -1,0 +1,15 @@
+################################################################
+# Manage notes-pda deployment through Crypto Infrastructure as Code
+################################################################
+
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+action "deploy_notes_pda" "svm::deploy_program" {
+    description = "Deploy notes_pda program"
+    program = svm::get_program_from_anchor_project("notes_pda") 
+    authority = signer.authority
+    payer = signer.payer
+}

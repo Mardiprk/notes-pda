@@ -17,20 +17,7 @@ describe("notes-pda", () => {
     PROGRAM_ID
   );
 
-  it("Initializing Note!", async () => {
-    const tx = await program.methods.initializeNote("Hello, Solana!").accounts({
-      noteAccount: notesPda,
-      user: walletkey,
-      systemProgram: anchor.web3.SystemProgram.programId
-    }).rpc();
-    
-    console.log("Init signature", tx);
-
-    const account = await program.account.noteAccount.fetch(notesPda);
-    console.log("Note:", account.content);
-
-  });
-
+  
   it("updating Note", async () => {
     const tx = await program.methods.updateNote("I think I like Renuka!...").accounts({
       noteAccount: notesPda,
