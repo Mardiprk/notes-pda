@@ -1,16 +1,57 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { NotesPda } from "../target/types/notes_pda";
+import { NotesProgram } from "../target/types/notes_program";
+import { PublicKey } from "@solana/web3.js";
 
 describe("notes-pda", () => {
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
 
-  const program = anchor.workspace.notesPda as Program<NotesPda>;
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
+  const program = anchor.workspace.notesProgram as Program<NotesProgram>;
+  const walletkey = provider.wallet.publicKey;
+  const PROGRAM_ID = program.programId;
+
+  const [notesPda, bump] = PublicKey.findProgramAddressSync(
+    [Buffer.from("note"), walletkey.toBuffer()],
+    PROGRAM_ID
+  );
+
+  it("Initializing Note!", async () => {
+    const tx = await program.methods.initializeNote("Hello, Solana!").accounts({
+      noteAccount: notesPda,
+      user: walletkey,
+      systemProgram: anchor.web3.SystemProgram.programId
+    }).rpc();
+    
+    console.log("Init signature", tx);
+
+    const account = await program.account.noteAccount.fetch(notesPda);
+    console.log("Note:", account.content);
+
+  });
+
+  it("updating Note", async () => {
+    const tx = await program.methods.updateNote("I think I like Renuka!...").accounts({
+      noteAccount: notesPda,
+      user: walletkey,
+    }).rpc();
+
+    console.log("Update signature", tx);
+
+    const account = await program.account.noteAccount.fetch(notesPda);
+    console.log("Updated Note:", account.content);
+  });
+  
+  it("delete note", async () => {
+    const tx = await program.methods.deleteNote().accounts({
+      noteAccount: notesPda,
+      user: walletkey,
+    }).rpc();
+
+    console.log("Delete signature", tx);
+
+    const account = await program.account.noteAccount.fetch(notesPda);
+    console.log("Updated Cleared:", account.content);
   });
 });
