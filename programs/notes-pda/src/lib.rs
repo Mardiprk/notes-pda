@@ -7,10 +7,11 @@ pub mod notes_program {
     use super::*;
 
     pub fn initialize_note(_ctx: Context<InitializeNote>, content: String) -> Result<()> {
+        require!(content.len() <= 280, CustomError::TooLong);
         let note_account = &mut _ctx.accounts.note_account;
         note_account.owner = _ctx.accounts.user.key();
         note_account.content = content;
-        msg!("Message Stored on-chain: {}", content);
+        msg!("Message Stored on-chain: {}", note_account.content);
         Ok(())
     }
 
@@ -20,9 +21,9 @@ pub mod notes_program {
             note_account.owner == _ctx.accounts.user.key(),
             CustomError::Unauthorized
         );
-        require!(new_content.len() < 280, CustomError::TooLong);
+        require!(new_content.len() <= 280, CustomError::TooLong);
         note_account.content = new_content;
-        msg!("Message Updated on-chain: {}", new_content);
+        msg!("Message Updated on-chain: {}", note_account.content);
         Ok(())
     }
 
@@ -44,8 +45,8 @@ pub struct InitializeNote<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 32 + 280,
-        seeds = [b"note".key(),user.key().as_ref()],
+        space = 8 + 32 + 4 + 280, // discriminator + Pubkey + String length + max content
+        seeds = [b"note", user.key().as_ref()],
         bump
     )]
     pub note_account: Account<'info, NoteAccount>,
@@ -59,7 +60,7 @@ pub struct InitializeNote<'info> {
 pub struct UpdateNote<'info> {
     #[account(
         mut,
-        seeds = [b"note".key(),user.key().as_ref()],
+        seeds = [b"note", user.key().as_ref()],
         bump
     )]
     pub note_account: Account<'info, NoteAccount>,
@@ -70,11 +71,10 @@ pub struct UpdateNote<'info> {
 pub struct DeleteNote<'info> {
     #[account(
         mut,
-        seeds = [b"note".key(),user.key().as_ref()],
+        seeds = [b"note", user.key().as_ref()],
         bump
     )]
     pub note_account: Account<'info, NoteAccount>,
-    #[account(mut)]
     pub user: Signer<'info>,
 }
 
